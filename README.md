@@ -45,4 +45,4 @@ bash <(curl -Ls https://raw.githubusercontent.com/Eggwite/Change-SSH-Port/main/c
 - Restart the SSH service to apply the new configuration.
 - If the restart fails, restore the original configuration and restart the service.
 
-# If you've read this far, why not give it a star? Create a PR to imporve my shoddy code.
+# 💖 If you've read this far, why not give it a star? Maybe create a PR to improve my shoddy code.
