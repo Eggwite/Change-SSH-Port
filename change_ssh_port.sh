@@ -14,8 +14,44 @@ command_exists() {
     command -v "$1" >/dev/null 2>&1
 }
 
+# Function to check Linux version compatibility
+check_linux_version() {
+    if [[ -f /etc/os-release ]]; then
+        . /etc/os-release
+        if [[ "$ID" == "ubuntu" || "$ID" == "debian" || "$ID" == "centos" ]]; then
+            return 0
+        else
+            echo -e "\e[31mThis script is only compatible with Ubuntu, Debian, and CentOS.\e[0m"
+            read -p "Do you want to attempt to continue anyway? (yes/no) " choice
+            choice=${choice:-no}
+            if [[ "$choice" == "yes" ]]; then
+                return 0
+            else
+                exit 1
+            fi
+        fi
+    else
+        echo -e "\e[31mCannot determine Linux distribution.\e[0m"
+        read -p "Do you want to attempt to continue anyway? (yes/no) " choice
+        choice=${choice:-no}
+        if [[ "$choice" == "yes" ]]; then
+            return 0
+        else
+            exit 1
+        fi
+    fi
+}
+
+# Check Linux version compatibility
+check_linux_version
+
 # Get the current SSH port from the sshd_config file
-OLD_PORT=$(grep "^Port " /etc/ssh/sshd_config | awk '{print $2}')
+SSH_CONFIG="/etc/ssh/sshd_config"
+if [[ ! -f "$SSH_CONFIG" ]]; then
+    read -p "Cannot find sshd_config at $SSH_CONFIG. Please enter the correct path: " SSH_CONFIG
+fi
+
+OLD_PORT=$(grep "^Port " "$SSH_CONFIG" | awk '{print $2}')
 if [ -z "$OLD_PORT" ]; then
     read -p "Enter the current SSH port (default is 22): " OLD_PORT
     OLD_PORT=${OLD_PORT:-22}
@@ -36,8 +72,9 @@ else
 fi
 
 # Create a backup of the SSH configuration file
-echo "Creating a backup of the SSH configuration file."
-sudo cp /etc/ssh/sshd_config /etc/ssh/sshd_config.bak
+BACKUP_PATH="/etc/ssh/sshd_config.bak"
+echo "Creating a backup of the SSH configuration file at $BACKUP_PATH."
+sudo cp "$SSH_CONFIG" "$BACKUP_PATH"
 
 # Check if UFW is installed
 if command_exists ufw; then
@@ -48,8 +85,12 @@ if command_exists ufw; then
         echo "Adding UFW rule for port $NEW_PORT."
         sudo ufw allow $NEW_PORT/tcp
     fi
-    echo "Deleting UFW rule for old port $OLD_PORT."
-    sudo ufw delete allow $OLD_PORT/tcp
+    if [[ "$1" == "--old-rules" ]]; then
+        echo "Keeping UFW rule for old port $OLD_PORT."
+    else
+        echo "Deleting UFW rule for old port $OLD_PORT."
+        sudo ufw delete allow $OLD_PORT/tcp
+    fi
 else
     echo "UFW is not installed."
 fi
@@ -63,8 +104,12 @@ if command_exists iptables; then
         echo "Adding iptables rule for port $NEW_PORT."
         sudo iptables -A INPUT -p tcp --dport $NEW_PORT -j ACCEPT
     fi
-    echo "Deleting iptables rule for old port $OLD_PORT."
-    sudo iptables -D INPUT -p tcp --dport $OLD_PORT -j ACCEPT
+    if [[ "$1" == "--old-rules" ]]; then
+        echo "Keeping iptables rule for old port $OLD_PORT."
+    else
+        echo "Deleting iptables rule for old port $OLD_PORT."
+        sudo iptables -D INPUT -p tcp --dport $OLD_PORT -j ACCEPT
+    fi
 
     # Check if iptables-persistent is installed
     if command_exists iptables-save && [ -f /etc/iptables/rules.v4 ]; then
@@ -79,13 +124,20 @@ fi
 
 # Update SSH configuration
 echo "Updating SSH configuration."
-sudo sed -i "s/^Port $OLD_PORT/Port $NEW_PORT/" /etc/ssh/sshd_config
+sudo sed -i "s/^Port $OLD_PORT/Port $NEW_PORT/" "$SSH_CONFIG"
 
 # Restart SSH service to apply new configuration
 echo "Restarting SSH service."
-sudo systemctl restart sshd
-
-echo "SSH port changed from $OLD_PORT to $NEW_PORT and firewall rules updated."
+if sudo systemctl restart sshd; then
+    echo -e "\e[32mThe SSH port has been changed to $NEW_PORT. Please try to SSH using the new port to confirm the successful change.\e[0m"
+    echo -e "\e[32mBackup of the SSH configuration file is located at $BACKUP_PATH.\e[0m"
+    exit 0
+else
+    sudo cp "$BACKUP_PATH" "$SSH_CONFIG"
+    sudo systemctl restart sshd
+    echo -e "\e[31mThe SSH port has not been changed.\e[0m"
+    exit 1
+fi
 
 # Prompt user to press any key to finish
 read -p "Press any key to finish..." -n1 -s
