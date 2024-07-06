@@ -1,13 +1,17 @@
 # Change-SSH-Port
 Changes SSH port on Ubuntu machine with bash and checks if port is available first. Personal use, not good tool. 
 
-User must be root
+User must be root:
 ```
 sudo -i
 ```
-Then copy and run
+Then copy and run:
 ```
 bash <(curl -Ls https://raw.githubusercontent.com/Eggwite/Change-SSH-Port/main/change_ssh_port.sh)
+```
+Optionally, keep old firewall rules:
+```
+bash <(curl -Ls https://raw.githubusercontent.com/Eggwite/Change-SSH-Port/main/change_ssh_port.sh) --old-rules
 ```
 
 ## Here’s a summary of what the script does:
