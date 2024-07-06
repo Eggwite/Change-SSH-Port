@@ -32,8 +32,8 @@ bash <(curl -Ls https://raw.githubusercontent.com/Eggwite/Change-SSH-Port/main/c
 - Backs up the current SSH configuration file to `/etc/ssh/sshd_config.bak`.
 
 ### Updates Firewall Rules:
-- Checks if UFW (Uncomplicated Firewall) is installed and updates rules for the new port.
-- Checks if iptables is installed and updates rules for the new port.
+- Checks if UFW (Uncomplicated Firewall) is installed and updates rules for the new port, removing old port rules.
+- Checks if iptables is installed and updates rules for the new port, removing old port rules.
 - Optionally keeps old firewall rules if the `--old-rules` flag is provided.
 
 ### Updates SSH Configuration:
