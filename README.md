@@ -1,4 +1,6 @@
 # Change-SSH-Port
+> ⚠️ **Warning:** This script has been hardly tested. Please proceed with caution.
+
 Changes SSH port on Ubuntu, Debian, or CentOS machine with bash "semi-automatically". Please feel free to use it at your discretion.
 
 User must be root:
