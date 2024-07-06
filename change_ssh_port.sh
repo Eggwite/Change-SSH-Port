@@ -42,6 +42,16 @@ check_linux_version() {
     fi
 }
 
+# Parse command-line arguments
+KEEP_OLD_RULES=false
+while [[ "$#" -gt 0 ]]; do
+    case $1 in
+        --old-rules) KEEP_OLD_RULES=true ;;
+        *) echo "Unknown parameter passed: $1"; exit 1 ;;
+    esac
+    shift
+done
+
 # Check Linux version compatibility
 check_linux_version
 
@@ -85,7 +95,7 @@ if command_exists ufw; then
         echo "Adding UFW rule for port $NEW_PORT."
         sudo ufw allow $NEW_PORT/tcp
     fi
-    if [[ "$1" == "--old-rules" ]]; then
+    if $KEEP_OLD_RULES; then
         echo "Keeping UFW rule for old port $OLD_PORT."
     else
         echo "Deleting UFW rule for old port $OLD_PORT."
@@ -104,7 +114,7 @@ if command_exists iptables; then
         echo "Adding iptables rule for port $NEW_PORT."
         sudo iptables -A INPUT -p tcp --dport $NEW_PORT -j ACCEPT
     fi
-    if [[ "$1" == "--old-rules" ]]; then
+    if $KEEP_OLD_RULES; then
         echo "Keeping iptables rule for old port $OLD_PORT."
     else
         echo "Deleting iptables rule for old port $OLD_PORT."
@@ -129,7 +139,7 @@ sudo sed -i "s/^Port $OLD_PORT/Port $NEW_PORT/" "$SSH_CONFIG"
 # Restart SSH service to apply new configuration
 echo "Restarting SSH service."
 if sudo systemctl restart sshd; then
-    echo -e "\e[32mThe SSH port has been changed to $NEW_PORT. Please try to SSH using the new port to confirm the successful change.\e[0m"
+    echo -e "\e[32mThe SSH port has been changed to $NEW_PORT. Please login using that port to test BEFORE ending this session.\e[0m"
     echo -e "\e[32mBackup of the SSH configuration file is located at $BACKUP_PATH.\e[0m"
     exit 0
 else
