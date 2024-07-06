@@ -28,7 +28,7 @@ bash <(curl -Ls https://raw.githubusercontent.com/Eggwite/Change-SSH-Port/main/c
 
 ### Prompts for New SSH Port:
 - Asks the user to enter a new SSH port.
-- Checks if the new port is available.
+- Check if the new port is available.
 
 ### Creates a Backup of SSH Configuration:
 - Backs up the current SSH configuration file to `/etc/ssh/sshd_config.bak`.
@@ -42,6 +42,7 @@ bash <(curl -Ls https://raw.githubusercontent.com/Eggwite/Change-SSH-Port/main/c
 - Modifies the `sshd_config` file to use the new SSH port.
 
 ### Restarts SSH Service:
-- Restarts the SSH service to apply the new configuration.
-- If the restart fails, restores the original configuration and restarts the service again.
+- Restart the SSH service to apply the new configuration.
+- If the restart fails, restore the original configuration and restart the service.
 
+# If you've read this far, why not give it a star? Create a PR to imporve my shoddy code.
